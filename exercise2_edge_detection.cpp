@@ -6,8 +6,9 @@
 
 using namespace std;
 
-vector<cv::Mat> images, canny_list, sobel_list, prewit_list, roberts_list;
-
+vector<cv::Mat> images, canny_list, sobel_list, prewit_list, roberts_list, enhanced_sobel, enhanced_roberts;
+vector<int> compression_params;
+    
 int prewit_veritcal[3][3] = {
     {-1, 0, 1},
     {-1, 0, 1},
@@ -40,7 +41,10 @@ void load_images(string path, string imageType)
     }
 }
 
-void get_edges(cv::Mat img)
+void write_label(string text, cv::Mat &img){
+    cv::putText(img, text, cv::Point(5, img.rows -40), cv::FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255), 4);
+}
+void get_edges(cv::Mat img, bool with_labels)
 {
     cv::Mat filtered;
     cv::GaussianBlur(img, filtered, cv::Size(5, 5), img.type());
@@ -55,14 +59,27 @@ void get_edges(cv::Mat img)
     cv::Sobel(filtered, sobel, CV_8U, 1, 1, 5);
     cv::Canny(img, canny, 100, 200, 3, false);
 
+    cv::Mat prewit = (prewitx + prewity);
+    cv::Mat roberts =  (robertsx + robertsy);
+
+    if(with_labels){
+        write_label("Canny Edges", canny);
+        write_label("Sobel Edges", sobel);
+        write_label("Prewit Edges", prewit);
+        write_label("Roberts Edges", roberts);
+    }
+
+
     canny_list.push_back(canny);
-    prewit_list.push_back((prewitx + prewity));
+    prewit_list.push_back(prewit);
     sobel_list.push_back(sobel);
-    roberts_list.push_back(robertsx + robertsy);
+    roberts_list.push_back(roberts);
 
 }
 
-void display_edges(){
+void display_edges(bool write_result){
+    compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(9);
     for(int i=0; i < images.size(); i++){
         cv::Mat disp, row1, row2;
         cv::hconcat(images[i], canny_list[i], row1);
@@ -70,16 +87,60 @@ void display_edges(){
         cv::hconcat(images[i], prewit_list[i], row2);
         cv::hconcat(row2, roberts_list[i], row2);
         cv::vconcat(row1, row2,disp);
+        if(write_result){
+            cv::imwrite("Results/Edges_Raw/Edges of building" +to_string(i) +".png",disp,compression_params);
+        }
         cv::imshow("Edges of building" + to_string(i), disp);
     }
      cv::waitKey(0);
 }
-int main()
-{
+
+void enhance_sobel_eddges(cv::Mat img, int kernelSize){
+    cv::Mat enhancedImg;
+    cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(kernelSize, kernelSize));
+    cv::morphologyEx(img,enhancedImg, cv::MORPH_OPEN,structuringElement,cv::Point(-1,-1),1);
+    cv::dilate(enhancedImg,enhancedImg, structuringElement,cv::Point(-1,-1),3);
+    cv::morphologyEx(enhancedImg,enhancedImg, cv::MORPH_OPEN,structuringElement,cv::Point(-1,-1),1);
+    //imshow("Sobel Enhanced", enhancedImg);
+    enhanced_sobel.push_back(enhancedImg);
+}
+
+void enhance_robert_edges(cv::Mat img, int kernelSize){
+    cv::Mat enhancedImg;
+    cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(kernelSize, kernelSize));
+    cv::dilate(img,enhancedImg,structuringElement, cv::Point(-1,-1),2);
+    enhanced_roberts.push_back(enhancedImg);
+}
+
+void display_enhaced_edges(bool write_result){
+    compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(9);
+    for(int i=0; i < images.size(); i++){
+        cv::Mat disp, row1, row2;
+        cv::hconcat(sobel_list[i], enhanced_sobel[i], row1);
+        cv::hconcat(roberts_list[i],enhanced_roberts[i], row2);
+        cv::vconcat(row1, row2,disp);
+        if(write_result == true){
+            cout << "Writing";
+            cv::imwrite("Results/Edges_Enhanced/Edges of building" +to_string(i) +".png",disp,compression_params);
+        }
+        cv::imshow("Enhanced_Edges of building" + to_string(i), disp);
+    }
+     cv::waitKey(0);
+}
+
+int main(){
     load_images("Buildings/", "jpg");
     for (cv::Mat img : images){
-        get_edges(img);
+        get_edges(img, false);
     }
-    display_edges();
+    display_edges(false);
+
+    for(int i=0; i<images.size(); i++){
+        enhance_sobel_eddges(sobel_list[i],2);
+        enhance_robert_edges(roberts_list[i],2);
+    }
+    display_enhaced_edges(true);
+
 
 }
