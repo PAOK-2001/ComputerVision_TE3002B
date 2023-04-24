@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<cv::Mat> images;
+vector<cv::Mat> images, canny_list, sobel_list, prewit_list, roberts_list;
 
 int prewit_veritcal[3][3] = {
     {-1, 0, 1},
@@ -55,19 +55,31 @@ void get_edges(cv::Mat img)
     cv::Sobel(filtered, sobel, CV_8U, 1, 1, 5);
     cv::Canny(img, canny, 100, 200, 3, false);
 
-    cv::imshow("Original", img);
-    cv::imshow("Prewit", (prewitx + prewity));
-    cv::imshow("Roberts", (robertsx + robertsy));
-    cv::imshow("Sobel", sobel);
-    cv::imshow("Canny", canny);
+    canny_list.push_back(canny);
+    prewit_list.push_back((prewitx + prewity));
+    sobel_list.push_back(sobel);
+    roberts_list.push_back(robertsx + robertsy);
+
 }
 
+void display_edges(){
+    for(int i=0; i < images.size(); i++){
+        cv::Mat disp, row1, row2;
+        cv::hconcat(images[i], canny_list[i], row1);
+        cv::hconcat(row1,sobel_list[i], row1);
+        cv::hconcat(images[i], prewit_list[i], row2);
+        cv::hconcat(row2, roberts_list[i], row2);
+        cv::vconcat(row1, row2,disp);
+        cv::imshow("Edges of building" + to_string(i), disp);
+    }
+     cv::waitKey(0);
+}
 int main()
 {
     load_images("Buildings/", "jpg");
-    for (cv::Mat img : images)
-    {
+    for (cv::Mat img : images){
         get_edges(img);
-        cv::waitKey(0);
     }
+    display_edges();
+
 }
