@@ -7,7 +7,7 @@
 
 using namespace std;
 
-vector<cv::Mat> images;
+vector<cv::Mat> images, gray_thrsholded, colour_thrsholded;
 
 void load_images(string path, string imageType){
     for(int i=0; i < 10; i++){
@@ -24,6 +24,7 @@ void grayscale_thresholding(cv::Mat loadedImage){
     cv::imshow("Original Image",loadedImage);
     cv::imshow("Grayscale",grayscale);
     cv::imshow("Thresholded",thresholded);
+    gray_thrsholded.push_back(thresholded);
 
 }
 
@@ -31,7 +32,20 @@ void threshold_over_color(cv::Mat img){
     cv::Mat thresholded;
     inRange(img, cv::Scalar(0, 150, 0), cv::Scalar(255, 255, 255), thresholded);
     cv::imshow("Thresholded (color)",thresholded);
+    colour_thrsholded.push_back(thresholded);
 
+}
+
+void save_results(){
+    vector<int> compression_params;
+    compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(9);
+    string binarization_path = "Results/Binarization/Binarization";
+    for(int i = 0; i < images.size(); i++){
+        cv::imwrite(binarization_path+to_string(i) +".png",gray_thrsholded[i],compression_params);
+        cv::imwrite(binarization_path+"_colour_channel"+to_string(i) +".png",colour_thrsholded[i],compression_params);
+    }
+    
 }
 
 int main(){
@@ -41,4 +55,5 @@ int main(){
         threshold_over_color(image);
         cv::waitKey(0);
     }
+    save_results();
 }
