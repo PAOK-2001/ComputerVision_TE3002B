@@ -44,11 +44,11 @@ void load_images(string path, string imageType)
 void write_label(string text, cv::Mat &img){
     cv::putText(img, text, cv::Point(5, img.rows -40), cv::FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(255, 255, 255), 4);
 }
-void get_edges(cv::Mat img, bool with_labels)
-{
+
+void get_edges(cv::Mat img, bool with_labels){
     cv::Mat filtered;
-    cv::GaussianBlur(img, filtered, cv::Size(5, 5), img.type());
-    cv::Mat sobel, canny, prewitx, prewity, robertsx, robertsy;
+    cv::GaussianBlur(img, filtered, cv::Size(3, 3), img.type());
+    cv::Mat sobel, sobelx, sobely, canny, prewitx, prewity, robertsx, robertsy;
 
     cv::filter2D(filtered, prewitx, -1, prewit_kernelx);
     cv::filter2D(filtered, prewity, -1, prewit_kernely);
@@ -56,8 +56,10 @@ void get_edges(cv::Mat img, bool with_labels)
     cv::filter2D(filtered, robertsx, -1, roberts_kernelx);
     cv::filter2D(filtered, robertsy, -1, roberts_kernely);
 
-    cv::Sobel(filtered, sobel, CV_8U, 1, 1, 5);
-    cv::Canny(img, canny, 100, 200, 3, false);
+    cv::Sobel(filtered, sobelx, CV_8U, 1, 0, 3);
+    cv::Sobel(filtered, sobely, CV_8U, 0, 1, 3);
+    sobel = sobelx + sobely;
+    cv::Canny(filtered, canny, 100, 200, 3, false);
 
     cv::Mat prewit = (prewitx + prewity);
     cv::Mat roberts =  (robertsx + robertsy);
@@ -98,17 +100,15 @@ void display_edges(bool write_result){
 void enhance_sobel_eddges(cv::Mat img, int kernelSize){
     cv::Mat enhancedImg;
     cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(kernelSize, kernelSize));
-    cv::morphologyEx(img,enhancedImg, cv::MORPH_OPEN,structuringElement,cv::Point(-1,-1),1);
-    cv::dilate(enhancedImg,enhancedImg, structuringElement,cv::Point(-1,-1),3);
-    cv::morphologyEx(enhancedImg,enhancedImg, cv::MORPH_OPEN,structuringElement,cv::Point(-1,-1),1);
-    //imshow("Sobel Enhanced", enhancedImg);
+    cv::morphologyEx(img,enhancedImg, cv::MORPH_GRADIENT,structuringElement);
     enhanced_sobel.push_back(enhancedImg);
 }
 
 void enhance_robert_edges(cv::Mat img, int kernelSize){
     cv::Mat enhancedImg;
     cv::Mat structuringElement = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(kernelSize, kernelSize));
-    cv::dilate(img,enhancedImg,structuringElement, cv::Point(-1,-1),2);
+    cv::morphologyEx(img,enhancedImg, cv::MORPH_GRADIENT,structuringElement,cv::Point(-1,-1),1);
+    cv::morphologyEx(img,enhancedImg, cv::MORPH_CLOSE,structuringElement,cv::Point(-1,-1),2);
     enhanced_roberts.push_back(enhancedImg);
 }
 
@@ -137,8 +137,8 @@ int main(){
     display_edges(false);
 
     for(int i=0; i<images.size(); i++){
-        enhance_sobel_eddges(sobel_list[i],2);
-        enhance_robert_edges(roberts_list[i],2);
+        enhance_sobel_eddges(sobel_list[i],3);
+        enhance_robert_edges(roberts_list[i],3);
     }
     display_enhaced_edges(true);
 
