@@ -17,11 +17,10 @@ def segment_image(img):
     # Apply thresholding to the grayscale image
     ret, binarized = cv.threshold(gray, 0, 255,  cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
     structuring_element = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
-    binarized = cv.morphologyEx(binarized, cv.MORPH_OPEN, structuring_element, iterations=3)
     # Separate into the known background and foreground
-    background = cv.dilate(binarized, structuring_element, iterations=2)
+    background = cv.dilate(binarized, structuring_element, iterations=3)
     distance_transform = cv.distanceTransform(binarized, cv.DIST_L2, 5)
-    ret, foreground = cv.threshold(distance_transform, 0.5 * distance_transform.max(), 255, 0)
+    ret, foreground = cv.threshold(distance_transform, 0.4 * distance_transform.max(), 255, 0)
     # Mark the reamining unknown area
     foreground = np.uint8(foreground)
     remainder = cv.subtract(background,foreground)
