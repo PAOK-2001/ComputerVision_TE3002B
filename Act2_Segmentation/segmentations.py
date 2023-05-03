@@ -5,12 +5,14 @@ import numpy as np
 path_kmeans ='Results/Comparison/kmeans/'
 path_meanShift='Results/Comparison/meanShift/'
 path_watershed='Results/Comparison/watershed/'
+path_dt = 'Results/Comparison/distance_transform/'
 path_noisy_watershed = 'Results/Comparison/watershed_noisy/'
 path_noisy_meanShift = 'Results/Comparison/meanShift_noisy/'
 path_noisy_kmeans = 'Results/Comparison/kmeans_noisy/'
 watersheded = []
 kmeans = []
 mean_shift = []
+dt = []
 
 def load_images(num):
     images = []
@@ -50,6 +52,9 @@ def image_process(images):
         # Separate into the known background and foreground
         background = cv2.dilate(binarized, structuring_element, iterations=3)
         distance_transform = cv2.distanceTransform(binarized, cv2.DIST_L2, 5)
+        dt_normalized = cv2.normalize(distance_transform, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        dt.append(dt_normalized)
+
         ret, foreground = cv2.threshold(distance_transform, 0.4 * distance_transform.max(), 255, 0)
         # Mark the reamining unknown area
         foreground = np.uint8(foreground)
@@ -68,6 +73,7 @@ def image_process(images):
         cv2.imshow('Original', pic)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
     return
 def add_noise(_images):
     noisy_images = []
@@ -87,6 +93,7 @@ image_process(images)
 write_results(watersheded, path_watershed)
 write_results(mean_shift, path_meanShift)
 write_results(kmeans, path_kmeans)
+write_results(dt,path_dt)
 images = add_noise(images)
 
 watersheded.clear()
