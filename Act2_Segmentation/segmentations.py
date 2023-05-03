@@ -9,6 +9,7 @@ path_dt = 'Results/Comparison/distance_transform/'
 path_noisy_watershed = 'Results/Comparison/watershed_noisy/'
 path_noisy_meanShift = 'Results/Comparison/meanShift_noisy/'
 path_noisy_kmeans = 'Results/Comparison/kmeans_noisy/'
+path_dt_noisy = 'Results/Comparison/distance_transform_noisy/'
 watersheded = []
 kmeans = []
 mean_shift = []
@@ -99,9 +100,11 @@ images = add_noise(images)
 watersheded.clear()
 mean_shift.clear()
 kmeans.clear()
+dt.clear()
 
 image_process(images)
 write_results(watersheded, path_noisy_watershed)
 write_results(mean_shift, path_noisy_meanShift)
 write_results(kmeans, path_noisy_kmeans)
+write_results(dt,path_dt_noisy)
     
